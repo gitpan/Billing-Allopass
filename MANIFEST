@@ -4,3 +4,4 @@ MANIFEST
 Allopass.pm
 README
 COPYING
+t/use.t

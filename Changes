@@ -1,5 +1,8 @@
 Revision history for Billing::Allopass
 
+0.03  Wed Mar 05 2003
+        - Adding simple install tests
+        
 0.02  Thu Mar 04 2003
         - Documentation fix
         - Automatically create session file if it doesn't exists

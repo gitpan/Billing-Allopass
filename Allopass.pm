@@ -5,7 +5,7 @@ use vars qw($VERSION @ISA @EXPORT $session_file);
 
 
 
-$VERSION = "0.02";
+$VERSION = "0.03";
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -64,7 +64,9 @@ This class provides you a easy api for the allopass.com system. It automatically
 =head1 METHODS
 
 =over 4
+
 =cut
+
 =item B<new> Class constructor. Provides session-based access check.
 
     $allopass=Billing::Allopass->new($session_file, [$ttl]);
@@ -80,10 +82,11 @@ sub new {
     if (!-e $session_file) {
         open TEMP, ">$session_file"; close TEMP;
     }
-    return(0) if !-e $session_file || !-w $session_file;
+    return(0)  if !-e $session_file;
+    #return(-1) if !-w $session_file;
     my $lttl=shift; $ttl=$lttl if defined $lttl && $lttl > 0;
     my $self = bless {}, $class;
-    return $self;
+    $self;
 }
 
 
@@ -113,7 +116,6 @@ sub check {
             _set_error('Allopass Recall OK');
             return(1);
         }
-        
     }
     0;
 }
