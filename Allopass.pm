@@ -5,7 +5,7 @@ use vars qw($VERSION @ISA @EXPORT $session_file);
 
 
 
-$VERSION = "0.03";
+$VERSION = "0.04";
 
 require Exporter;
 @ISA = qw(Exporter);
@@ -13,9 +13,7 @@ require Exporter;
 
 use HTTP::Request::Common qw(GET POST);
 use LWP::UserAgent;
-#use CGI qw/:standard/;
 use CGI::Cookie;
-#use URI::URL qw(url);
 
 my $baseurl = 'http://www.allopass.com/check/vf.php4';
 my $session_file='';
@@ -25,56 +23,9 @@ my $os=0;
 my $error='';
 =head1 NAME
 
-Billing::Allopass - A class for micropayment system from allopass I<http://www.allopass.com/>
-
-=head1 SYNOPSIS
-
-  ### Session-based access control (more secure)
-
-  use Billing::Allopass;
-  my $allopass=Billing::Allopass->new($session_file, [$ttl]);
+Billing::Allopass - This module is no longer supported.
+Feel free to take a look to the Business::PhoneBill::Allopass module, available at CPAN
   
-  # Check access
-  if ($allopass->check($document_id, [$RECALL])){
-        print "OK\n";
-  } else {
-        print $allopass->get_last_error;
-  }
-  
-  # No further access for this user
-  $allopass->end_session($document_id);
-
-OR
-
-  ### Simple access control 
-  use Billing::Allopass;
-
-  if (allopass_check($document_id, $RECALL)){
-        print "OK\n";
-  } else {
-        print "NOK\n";
-  }
-  
-  
-
-=head1 DESCRIPTION
-
-This class provides you a easy api for the allopass.com system. It automatically handles user sessions. See I<http://www.allopass.com> for more informations on this system.
-
-=head1 METHODS
-
-=over 4
-
-=cut
-
-=item B<new> Class constructor. Provides session-based access check.
-
-    $allopass=Billing::Allopass->new($session_file, [$ttl]);
-
-$session_file is the physical location for the session file. The webserver must have write access to it. 
-$ttl is the number of minutes of inactivity for automatically removing sessions. Default : 60.
-This function returns 0 if there are no write access to $session_file. 
-
 =cut
 sub new {
     my $class = shift;
@@ -89,12 +40,6 @@ sub new {
     $self;
 }
 
-
-=item B<check> - Checks if a client have access to this document
-    
-    $allopass->allopass_check($document_id, $code);
-    
-=cut
 sub check {
     my $self=shift;
     my ($doc_id, $code, $r) = @_;
@@ -106,7 +51,7 @@ sub check {
         $ua->agent('Mozilla/5.0');
         $req = POST $baseurl,
         [
-        'CODE'      => $code ,
+        'CODE'        => $code ,
 	'AUTH'        => $doc_id ,
         ];
         #$req->headers->referer($baseurl);
@@ -120,24 +65,11 @@ sub check {
     0;
 }
 
-=item B<end_session> - Ends user session for specified document.
-
-    $allopass->end_session($document_id);
-
-=cut
-
 sub end_session {
     my $self=shift;
     _end_session(@_);
 }
 
-=item B<allopass_check> - Simply checks if a code has been recently validated for this document.
-
-    allopass_check($document_id, $code);
-
-You must perform this check within 2 minutes after the code is entered.
-
-=cut
 sub allopass_check {
     my ($doc_id, $code, $r) = @_;
     my ($res, $ua, $req);
@@ -154,11 +86,6 @@ sub allopass_check {
     0;
 }
 
-=item B<get_last_error> - Returns last recorded error
-
-    $allopass->get_last_error();
-
-=cut
 sub get_last_error {
     my $self=shift;
     $error;

@@ -1,28 +1,8 @@
-Billing/Allopass version 0.01
+Billing/Allopass version 0.04
 =============================
 
 
-INSTALLATION
-
-To install this module type the following:
-
-   perl Makefile.PL
-   make
-   make install
-
-DEPENDENCIES
-
-This module requires these other modules and libraries:
-
-    HTTP::Request::Common
-    LWP::UserAgent
-    CGI::Cookie
- 
-
-COPYRIGHT AND LICENCE
-
-Copyright (C) 2003 Bernard Nauwelaerts <bpn@it-development.be>
-
-This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself. 
-
+   This module is no longer supported, 
+   because it does'nt respect the CPAN name structure.
+   
+   Feel free to take a look to the Business::PhoneBill::Allopass module
