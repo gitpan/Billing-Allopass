@@ -1,15 +1,15 @@
 package Billing::Allopass;
 use strict;
 
-use vars qw($VERSION @ISA @EXPORT $session_file $result);
+use vars qw($VERSION @ISA @EXPORT $session_file);
 
 
 
-$VERSION = "0.01";
+$VERSION = "0.02";
 
 require Exporter;
 @ISA = qw(Exporter);
-@EXPORT = qw( allopass_check $result);
+@EXPORT = qw( allopass_check );
 
 use HTTP::Request::Common qw(GET POST);
 use LWP::UserAgent;
@@ -59,58 +59,43 @@ OR
 
 =head1 DESCRIPTION
 
-This class provides you a easy api for the allopass.com system. It automatically handles user sessions. See l<http://www.allopass.com> for more informations on this system.
+This class provides you a easy api for the allopass.com system. It automatically handles user sessions. See I<http://www.allopass.com> for more informations on this system.
 
 =head1 METHODS
 
 =over 4
+=cut
+=item B<new> Class constructor. Provides session-based access check.
 
-=item B<$allopass=Billing::Allopass->new($session_file, [$ttl]);> Class constructor. Provides session-based access check.
-    $session_file is the physical location for the session file. The webserver must have write access to it. 
-    $ttl is the number of minutes of inactivity for automatically removing sessions. Default : 60.
-    This function returns 0 if there are no write access to $session_file. This file must exists before calling this constructor.
+    $allopass=Billing::Allopass->new($session_file, [$ttl]);
+
+$session_file is the physical location for the session file. The webserver must have write access to it. 
+$ttl is the number of minutes of inactivity for automatically removing sessions. Default : 60.
+This function returns 0 if there are no write access to $session_file. 
 
 =cut
-
 sub new {
     my $class = shift;
     $session_file=shift;
+    if (!-e $session_file) {
+        open TEMP, ">$session_file"; close TEMP;
+    }
     return(0) if !-e $session_file || !-w $session_file;
     my $lttl=shift; $ttl=$lttl if defined $lttl && $lttl > 0;
     my $self = bless {}, $class;
     return $self;
 }
 
-=item B<allopass_check($document_id, $code)> - Simply checks if a code has been recently validated for this document.
-    You must perform this check within 2 minutes after the code is entered.
-
-=cut
-sub allopass_check {
-    my ($doc_id, $code, $r) = @_;
-    my ($res, $ua, $req);
-    $ua = LWP::UserAgent->new;
-    $ua->agent('Mozilla/5.0');
-    $req = POST $baseurl,
-        [
-        'CODE'      => $code ,
-	'to'        => $doc_id ,
-        ];
-    #$req->headers->referer($baseurl);
-    $res = $ua->simple_request($req)->as_string;
-    return 1 if _is_res_ok($res);
-    0;
-}
 
 =item B<check> - Checks if a client have access to this document
-Must be used in class context
-
+    
+    $allopass->allopass_check($document_id, $code);
+    
 =cut
-
 sub check {
     my $self=shift;
     my ($doc_id, $code, $r) = @_;
     my ($res, $ua, $req);
-    
     if (_is_session($doc_id)) {
         return(1);
     } elsif (defined $code && $code ne "") {
@@ -133,8 +118,9 @@ sub check {
     0;
 }
 
+=item B<end_session> - Ends user session for specified document.
 
-=item B<$allopass->end_session($document_id)> - Ends user session for specified document.
+    $allopass->end_session($document_id);
 
 =cut
 
@@ -143,13 +129,62 @@ sub end_session {
     _end_session(@_);
 }
 
-=item B<$allopass->get_last_error()> - Returns last recorded error
+=item B<allopass_check> - Simply checks if a code has been recently validated for this document.
+
+    allopass_check($document_id, $code);
+
+You must perform this check within 2 minutes after the code is entered.
 
 =cut
+sub allopass_check {
+    my ($doc_id, $code, $r) = @_;
+    my ($res, $ua, $req);
+    $ua = LWP::UserAgent->new;
+    $ua->agent('Mozilla/5.0');
+    $req = POST $baseurl,
+        [
+        'CODE'      => $code ,
+	'to'        => $doc_id ,
+        ];
+    #$req->headers->referer($baseurl);
+    $res = $ua->simple_request($req)->as_string;
+    return 1 if _is_res_ok($res);
+    0;
+}
 
+=item B<get_last_error> - Returns last recorded error
+
+    $allopass->get_last_error();
+
+=cut
 sub get_last_error {
     my $self=shift;
     $error;
+}
+
+### Undocumented functions =====================================================
+sub check_code {
+    my $self=shift;
+    my ($docid, $code, $datas) = @_;
+    my ($site_id, $doc_id, $r)=split(/\//, $docid);
+    my ($res, $ua, $req);
+    my $baseurl = 'http://www.allopass.com/check/index.php4';
+    $ua = LWP::UserAgent->new;
+    $ua->agent('Mozilla/5.0');
+    $req = POST $baseurl,
+        [
+	'SITE_ID'    => $site_id ,
+	'DOC_ID'     => $doc_id ,
+        'CODE0'      => $code ,
+        'DATAS'      => $datas ,
+	];
+    $res = $ua->simple_request($req)->as_string;
+    if ($res=~/Set-Cookie: AP_CHECK/) {
+        _add_session($docid, $code);
+        _set_error('Allopass Check Code OK');
+        return(1);
+    }
+    0;
 }
 
 ### PRIVATE FUNCTIONS ==========================================================
